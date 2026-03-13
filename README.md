@@ -114,7 +114,7 @@ Distributed under the MIT License. Lihat `LICENSE` untuk detail.
 
 ## 👨‍💻 Author
 
-Created with ❤️ by **nathggn**
+Created with ❤️ by **Ikyletwar**
 
 ---
 

@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Geist', 'Inter', 'system-ui', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --bg: #050505;
+      --card: rgba(255, 255, 255, 0.02);
+      --card-border: rgba(255, 255, 255, 0.04);
+      --input-bg: rgba(255, 255, 255, 0.02);
+      --input-border: rgba(255, 255, 255, 0.06);
+      --input-focus: rgba(255, 255, 255, 0.1);
+      --text: #fafafa;
+      --text-muted: #71717a;
+      --text-subtle: #3f3f46;
+      --accent: #e4e4e7;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      font-family: 'Geist', 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Ambient background */
+    .ambient {
+      position: fixed;
+      inset: 0;
+      background: 
+        radial-gradient(ellipse 80% 60% at 50% 0%, rgba(255, 255, 255, 0.02) 0%, transparent 50%),
+        radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.03) 0%, transparent 40%),
+        radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.02) 0%, transparent 40%);
+      pointer-events: none;
+    }
+
+    /* Grain texture */
+    .grain {
+      position: fixed;
+      inset: 0;
+      opacity: 0.15;
+      pointer-events: none;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    }
+
+    /* Card */
+    .auth-card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(40px);
+      -webkit-backdrop-filter: blur(40px);
+      box-shadow: 
+        0 0 0 1px rgba(255, 255, 255, 0.01) inset,
+        0 40px 80px -20px rgba(0, 0, 0, 0.5);
+      opacity: 0;
+      transform: translateY(12px) scale(0.99);
+      transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .auth-card.reveal {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    /* Input styling */
+    .input-wrap {
+      position: relative;
+    }
+
+    .input-field {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      color: var(--text);
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .input-field::placeholder {
+      color: var(--text-subtle);
+    }
+
+    .input-field:hover {
+      border-color: rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .input-field:focus {
+      outline: none;
+      border-color: rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.04);
+      box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.02);
+    }
+
+    .input-field.error {
+      border-color: rgba(239, 68, 68, 0.5);
+      animation: shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      10%, 50%, 90% { transform: translateX(-3px); }
+      30%, 70% { transform: translateX(3px); }
+    }
+
+    /* Bottom line accent */
+    .input-line {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      width: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      transform: translateX(-50%);
+    }
+
+    .input-field:focus ~ .input-line {
+      width: 100%;
+    }
+
+    /* Button */
+    .btn-primary {
+      background: linear-gradient(135deg, #fafafa 0%, #d4d4d8 100%);
+      color: #09090b;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .btn-primary::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.3) 0%, transparent 60%);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 
+        0 0 0 1px rgba(255, 255, 255, 0.1),
+        0 10px 40px -10px rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-primary:hover::before {
+      opacity: 1;
+    }
+
+    .btn-primary:active {
+      transform: translateY(0) scale(0.995);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+      box-shadow: none !important;
+    }
+
+    /* Tab system */
+    .tab-container {
+      position: relative;
+      display: flex;
+      gap: 4px;
+      padding: 4px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 10px;
+    }
+
+    .tab-indicator {
+      position: absolute;
+      top: 4px;
+      bottom: 4px;
+      width: calc(50% - 6px);
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 6px;
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .tab-indicator.register {
+      transform: translateX(calc(100% + 4px));
+    }
+
+    .tab-btn {
+      flex: 1;
+      position: relative;
+      z-index: 1;
+      padding: 10px 0;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      transition: color 0.25s;
+    }
+
+    .tab-btn.active {
+      color: var(--text);
+    }
+
+    .tab-btn:not(.active):hover {
+      color: var(--text-muted);
+    }
+
+    /* Form transitions */
+    .form-panel {
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .form-panel.hidden {
+      opacity: 0;
+      transform: translateX(16px);
+      pointer-events: none;
+      position: absolute;
+      inset: 0;
+    }
+
+    /* Typewriter */
+    .typewriter {
+      display: inline-block;
+      overflow: hidden;
+    }
+
+    .typewriter .cursor {
+      display: inline-block;
+      width: 1.5px;
+      height: 1em;
+      background: rgba(255, 255, 255, 0.4);
+      margin-left: 1px;
+      vertical-align: text-bottom;
+      animation: blink 1s step-end infinite;
+    }
+
+    .typewriter.done .cursor {
+      display: none;
+    }
+
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
+
+    /* Reveal animations */
+    .reveal {
+      opacity: 0;
+      transform: translateY(8px);
+      transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      top: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      opacity: 0;
+      background: rgba(24, 24, 27, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(20px);
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 100;
+    }
+
+    .toast.visible {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    /* Spinner */
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .spinner {
+      width: 14px;
+      height: 14px;
+      border: 1.5px solid rgba(0, 0, 0, 0.2);
+      border-top-color: currentColor;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+
+    /* Logo animation */
+    .logo-ring {
+      position: relative;
+    }
+
+    .logo-ring::before {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 50%;
+      border: 1px solid transparent;
+      border-top-color: rgba(255, 255, 255, 0.2);
+      animation: logoSpin 3s linear infinite;
+    }
+
+    @keyframes logoSpin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Focus visible */
+    :focus-visible {
+      outline: 2px solid rgba(255, 255, 255, 0.2);
+      outline-offset: 2px;
+    }
+
+    /* Password toggle */
+    .pw-toggle {
+      color: var(--text-subtle);
+      transition: color 0.2s;
+    }
+
+    .pw-toggle:hover {
+      color: var(--text-muted);
+    }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    /* Mobile adjustments */
+    @media (max-width: 480px) {
+      .auth-card {
+        border-radius: 20px;
+      }
+    }
+  </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-6">
+  <div class="ambient"></div>
+  <div class="grain"></div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast px-4 py-2.5 rounded-full flex items-center gap-2">
+    <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-400" id="toastIcon"></i>
+    <span class="text-xs font-medium" id="toastText"></span>
+  </div>
+
+  <!-- Main -->
+  <main class="relative z-10 w-full max-w-[340px]">
+    <div class="auth-card rounded-2xl p-7" id="card">
+      
+      <!-- Header -->
+      <header class="text-center mb-7">
+        <div class="logo-ring w-9 h-9 rounded-full bg-white/[0.03] border border-white/[0.06] flex items-center justify-center mx-auto mb-5 reveal" id="logo">
+          <i data-lucide="key-round" class="w-4 h-4 text-zinc-400"></i>
+        </div>
+        <h1 class="text-lg font-medium tracking-tight mb-0.5 reveal" id="titleWrap">
+          <span id="title" class="typewriter"><span class="text"></span><span class="cursor"></span></span>
+        </h1>
+        <p class="text-[13px] text-zinc-500 reveal" id="subtitleWrap">
+          <span id="subtitle" class="typewriter"><span class="text"></span><span class="cursor"></span></span>
+        </p>
+      </header>
+
+      <!-- Tabs -->
+      <div class="tab-container mb-6 reveal" id="tabs">
+        <div class="tab-indicator" id="indicator"></div>
+        <button type="button" class="tab-btn active" data-tab="login" id="loginTab">Masuk</button>
+        <button type="button" class="tab-btn" data-tab="register" id="registerTab">Daftar</button>
+      </div>
+
+      <!-- Forms -->
+      <div class="relative min-h-[180px]" id="formsWrap">
+        
+        <!-- Login Form -->
+        <form id="loginForm" class="form-panel space-y-4">
+          <div class="reveal" data-delay="0">
+            <label class="block text-[11px] font-medium text-zinc-500 mb-1.5 tracking-wide uppercase">
+              <span id="loginUserLabel" class="typewriter"><span class="text"></span><span class="cursor"></span></span>
+            </label>
+            <div class="input-wrap">
+              <input type="text" id="loginUser" class="input-field h-11 px-4 rounded-lg text-[13px]" placeholder="username" autocomplete="username">
+              <div class="input-line"></div>
+            </div>
+            <p class="text-[11px] text-red-400 mt-1 hidden" id="loginUserErr"></p>
+          </div>
+          
+          <div class="reveal" data-delay="1">
+            <label class="block text-[11px] font-medium text-zinc-500 mb-1.5 tracking-wide uppercase">
+              <span id="loginPassLabel" class="typewriter"><span class="text"></span><span class="cursor"></span></span>
+            </label>
+            <div class="input-wrap relative">
+              <input type="password" id="loginPass" class="input-field h-11 px-4 pr-10 rounded-lg text-[13px]" placeholder="password" autocomplete="current-password">
+              <button type="button" class="pw-toggle absolute right-3 top-1/2 -translate-y-1/2 p-1" data-target="loginPass" aria-label="Show password">
+                <i data-lucide="eye" class="w-4 h-4"></i>
+              </button>
+              <div class="input-line"></div>
+            </div>
+            <p class="text-[11px] text-red-400 mt-1 hidden" id="loginPassErr"></p>
+          </div>
+          
+          <div class="reveal pt-1" data-delay="2">
+            <button type="submit" class="btn-primary w-full h-11 rounded-lg text-[13px] font-medium" id="loginBtn">
+              <span class="btn-text">Masuk</span>
+              <span class="btn-loading hidden items-center justify-center gap-2">
+                <span class="spinner"></span>
+                <span>Memproses</span>
+              </span>
+            </button>
+          </div>
+        </form>
+
+        <!-- Register Form -->
+        <form id="registerForm" class="form-panel hidden space-y-4">
+          <div class="reveal" data-delay="0">
+            <label class="block text-[11px] font-medium text-zinc-500 mb-1.5 tracking-wide uppercase">
+              <span id="regUserLabel" class="typewriter"><span class="text"></span><span class="cursor"></span></span>
+            </label>
+            <div class="input-wrap">
+              <input type="text" id="regUser" class="input-field h-11 px-4 rounded-lg text-[13px]" placeholder="username" autocomplete="username">
+              <div class="input-line"></div>
+            </div>
+            <p class="text-[11px] text-red-400 mt-1 hidden" id="regUserErr"></p>
+          </div>
+          
+          <div class="reveal" data-delay="1">
+            <label class="block text-[11px] font-medium text-zinc-500 mb-1.5 tracking-wide uppercase">
+              <span id="regPassLabel" class="typewriter"><span class="text"></span><span class="cursor"></span></span>
+            </label>
+            <div class="input-wrap relative">
+              <input type="password" id="regPass" class="input-field h-11 px-4 pr-10 rounded-lg text-[13px]" placeholder="min. 6 karakter" autocomplete="new-password">
+              <button type="button" class="pw-toggle absolute right-3 top-1/2 -translate-y-1/2 p-1" data-target="regPass" aria-label="Show password">
+                <i data-lucide="eye" class="w-4 h-4"></i>
+              </button>
+              <div class="input-line"></div>
+            </div>
+            <p class="text-[11px] text-red-400 mt-1 hidden" id="regPassErr"></p>
+          </div>
+          
+          <div class="reveal pt-1" data-delay="2">
+            <button type="submit" class="btn-primary w-full h-11 rounded-lg text-[13px] font-medium" id="regBtn">
+              <span class="btn-text">Buat Akun</span>
+              <span class="btn-loading hidden items-center justify-center gap-2">
+                <span class="spinner"></span>
+                <span>Memproses</span>
+              </span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <p class="text-center text-[11px] text-zinc-600 mt-5 reveal" id="footer">
+      Dengan melanjutkan, Anda menyetujui <a href="#" class="text-zinc-500 hover:text-zinc-400 transition-colors">Syarat Layanan</a>
+    </p>
+  </main>
+
+  <script>
+    // Initialize Lucide
+    lucide.createIcons();
+
+    // DOM elements
+    const $ = id => document.getElementById(id);
+    const card = $('card');
+    const loginForm = $('loginForm');
+    const registerForm = $('registerForm');
+    const loginTab = $('loginTab');
+    const registerTab = $('registerTab');
+    const indicator = $('indicator');
+    const toast = $('toast');
+    const toastText = $('toastText');
+    const toastIcon = $('toastIcon');
+
+    // State
+    let currentTab = 'login';
+    let isLoading = false;
+    let typeSpeed = 35;
+
+    // Typewriter function
+    async function typeWrite(element, text, speed = typeSpeed) {
+      return new Promise(resolve => {
+        const textEl = element.querySelector('.text');
+        const cursorEl = element.querySelector('.cursor');
+        
+        if (!textEl) {
+          element.textContent = text;
+          resolve();
+          return;
+        }
+        
+        element.classList.remove('done');
+        textEl.textContent = '';
+        let i = 0;
+        
+        function type() {
+          if (i < text.length) {
+            textEl.textContent += text.charAt(i);
+            i++;
+            setTimeout(type, speed);
+          } else {
+            element.classList.add('done');
+            resolve();
+          }
+        }
+        type();
+      });
+    }
+
+    // Reveal elements with stagger
+    function revealElements(container) {
+      const items = container.querySelectorAll('.reveal');
+      items.forEach((item, i) => {
+        item.classList.remove('visible');
+        const delay = parseInt(item.dataset.delay || 0) * 80 + 50;
+        setTimeout(() => item.classList.add('visible'), delay);
+      });
+    }
+
+    // Initialize sequence
+    async function init() {
+      await sleep(100);
+      card.classList.add('reveal');
+      
+      await sleep(200);
+      $('logo').classList.add('visible');
+      
+      await sleep(100);
+      $('titleWrap').classList.add('visible');
+      await typeWrite($('title'), 'Masuk', 50);
+      
+      await sleep(50);
+      $('subtitleWrap').classList.add('visible');
+      await typeWrite($('subtitle'), 'Lanjutkan ke akun Anda', 30);
+      
+      await sleep(80);
+      $('tabs').classList.add('visible');
+      
+      await sleep(60);
+      await typeWrite($('loginUserLabel'), 'Username', 25);
+      await sleep(30);
+      await typeWrite($('loginPassLabel'), 'Password', 25);
+      
+      revealElements(loginForm);
+      
+      await sleep(200);
+      $('footer').classList.add('visible');
+    }
+
+    // Helper
+    function sleep(ms) {
+      return new Promise(r => setTimeout(r, ms));
+    }
+
+    // Toast
+    function showToast(message, success = true) {
+      toastIcon.setAttribute('data-lucide', success ? 'check' : 'x');
+      toastIcon.className = 'w-3.5 h-3.5 ' + (success ? 'text-emerald-400' : 'text-red-400');
+      toastText.textContent = message;
+      lucide.createIcons();
+      toast.classList.add('visible');
+      setTimeout(() => toast.classList.remove('visible'), 3000);
+    }
+
+    // Loading state
+    function setLoading(btn, loading) {
+      const text = btn.querySelector('.btn-text');
+      const loadingEl = btn.querySelector('.btn-loading');
+      
+      if (loading) {
+        text.classList.add('hidden');
+        loadingEl.classList.remove('hidden');
+        loadingEl.classList.add('flex');
+      } else {
+        text.classList.remove('hidden');
+        loadingEl.classList.add('hidden');
+        loadingEl.classList.remove('flex');
+      }
+      btn.disabled = loading;
+    }
+
+    // Error handling
+    function showError(input, errEl, msg) {
+      input.classList.add('error');
+      errEl.textContent = msg;
+      errEl.classList.remove('hidden');
+    }
+
+    function clearError(input, errEl) {
+      input.classList.remove('error');
+      errEl.classList.add('hidden');
+    }
+
+    // Validation
+    function validateUser(u) {
+      if (!u) return { ok: false, msg: 'Wajib diisi' };
+      if (u.length < 3) return { ok: false, msg: 'Min. 3 karakter' };
+      if (!/^[a-zA-Z0-9_]+$/.test(u)) return { ok: false, msg: 'Huruf, angka, _ saja' };
+      return { ok: true };
+    }
+
+    function validatePass(p) {
+      if (!p) return { ok: false, msg: 'Wajib diisi' };
+      if (p.length < 6) return { ok: false, msg: 'Min. 6 karakter' };
+      return { ok: true };
+    }
+
+    // Storage
+    function getUsers() {
+      try {
+        return JSON.parse(localStorage.getItem('auth_users') || '{}');
+      } catch {
+        return {};
+      }
+    }
+
+    // Tab switch
+    async function switchTab(tab) {
+      if (currentTab === tab || isLoading) return;
+      currentTab = tab;
+
+      // Update tabs
+      loginTab.classList.toggle('active', tab === 'login');
+      registerTab.classList.toggle('active', tab === 'register');
+      indicator.classList.toggle('register', tab === 'register');
+
+      // Animate forms
+      const hideForm = tab === 'login' ? registerForm : loginForm;
+      const showForm = tab === 'login' ? loginForm : registerForm;
+
+      hideForm.classList.add('hidden');
+      
+      // Update header
+      const title = tab === 'login' ? 'Masuk' : 'Daftar';
+      const subtitle = tab === 'login' ? 'Lanjutkan ke akun Anda' : 'Buat akun baru';
+      
+      await typeWrite($('title'), title, 45);
+      await sleep(30);
+      await typeWrite($('subtitle'), subtitle, 25);
+      
+      await sleep(50);
+      showForm.classList.remove('hidden');
+      
+      // Type labels
+      const userLabel = tab === 'login' ? 'loginUserLabel' : 'regUserLabel';
+      const passLabel = tab === 'login' ? 'loginPassLabel' : 'regPassLabel';
+      
+      await typeWrite($(userLabel), 'Username', 25);
+      await sleep(20);
+      await typeWrite($(passLabel), 'Password', 25);
+      
+      revealElements(showForm);
+    }
+
+    // Event listeners
+    loginTab.onclick = () => switchTab('login');
+    registerTab.onclick = () => switchTab('register');
+
+    // Password toggle
+    document.querySelectorAll('[data-target]').forEach(btn => {
+      btn.onclick = () => {
+        const input = $(btn.dataset.target);
+        const icon = btn.querySelector('i');
+        
+        if (input.type === 'password') {
+          input.type = 'text';
+          icon.setAttribute('data-lucide', 'eye-off');
+        } else {
+          input.type = 'password';
+          icon.setAttribute('data-lucide', 'eye');
+        }
+        lucide.createIcons();
+      };
+    });
+
+    // Login
+    loginForm.onsubmit = async e => {
+      e.preventDefault();
+      if (isLoading) return;
+
+      const user = $('loginUser');
+      const pass = $('loginPass');
+      const userErr = $('loginUserErr');
+      const passErr = $('loginPassErr');
+
+      clearError(user, userErr);
+      clearError(pass, passErr);
+
+      const vu = validateUser(user.value.trim());
+      const vp = validatePass(pass.value);
+      let hasErr = false;
+
+      if (!vu.ok) { showError(user, userErr, vu.msg); hasErr = true; }
+      if (!vp.ok) { showError(pass, passErr, vp.msg); hasErr = true; }
+      if (hasErr) return;
+
+      isLoading = true;
+      setLoading($('loginBtn'), true);
+      await sleep(900);
+
+      const users = getUsers();
+      const key = user.value.trim().toLowerCase();
+
+      if (!users[key]) {
+        showError(user, userErr, 'Username tidak ditemukan');
+        isLoading = false;
+        setLoading($('loginBtn'), false);
+        return;
+      }
+
+      if (users[key] !== pass.value) {
+        showError(pass, passErr, 'Password salah');
+        isLoading = false;
+        setLoading($('loginBtn'), false);
+        return;
+      }
+
+      showToast('Selamat datang, ' + user.value.trim());
+      isLoading = false;
+      setLoading($('loginBtn'), false);
+      loginForm.reset();
+    };
+
+    // Register
+    registerForm.onsubmit = async e => {
+      e.preventDefault();
+      if (isLoading) return;
+
+      const user = $('regUser');
+      const pass = $('regPass');
+      const userErr = $('regUserErr');
+      const passErr = $('regPassErr');
+
+      clearError(user, userErr);
+      clearError(pass, passErr);
+
+      const vu = validateUser(user.value.trim());
+      const vp = validatePass(pass.value);
+      let hasErr = false;
+
+      if (!vu.ok) { showError(user, userErr, vu.msg); hasErr = true; }
+      if (!vp.ok) { showError(pass, passErr, vp.msg); hasErr = true; }
+      if (hasErr) return;
+
+      isLoading = true;
+      setLoading($('regBtn'), true);
+      await sleep(900);
+
+      const users = getUsers();
+      const key = user.value.trim().toLowerCase();
+
+      if (users[key]) {
+        showError(user, userErr, 'Username sudah digunakan');
+        isLoading = false;
+        setLoading($('regBtn'), false);
+        return;
+      }
+
+      users[key] = pass.value;
+      localStorage.setItem('auth_users', JSON.stringify(users));
+
+      showToast('Akun berhasil dibuat');
+      isLoading = false;
+      setLoading($('regBtn'), false);
+      registerForm.reset();
+
+      setTimeout(() => switchTab('login'), 700);
+    };
+
+    // Clear errors on input
+    $('loginUser').oninput = () => clearError($('loginUser'), $('loginUserErr'));
+    $('loginPass').oninput = () => clearError($('loginPass'), $('loginPassErr'));
+    $('regUser').oninput = () => clearError($('regUser'), $('regUserErr'));
+    $('regPass').oninput = () => clearError($('regPass'), $('regPassErr'));
+
+    // Initialize
+    init();
+  </script>
+</body>
+</html>
